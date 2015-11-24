@@ -40,10 +40,11 @@
        xmlns:tx="http://www.springframework.org/schema/tx"
        xmlns:util="http://www.springframework.org/schema/util"
        xmlns:sec="http://www.springframework.org/schema/security"
+       xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd
        http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.2.xsd
-       http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+       http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
     <!--
        | The authentication manager defines security policy for authentication by specifying at a minimum
@@ -111,14 +112,15 @@
        | * org.jasig.cas.support.spnego.authentication.handler.support.JCIFSSpnegoAuthenticationHandler
        -->
     <!--    TODO custom-tag 此处自定义配置    -->
-    <bean id="primaryAuthenticationHandler"
+    <!--<bean id="primaryAuthenticationHandler"
           class="org.jasig.cas.authentication.AcceptUsersAuthenticationHandler">
         <property name="users">
             <map>
-                <entry key="casuser" value="Mellon"/>
+                &lt;!&ndash;<entry key="casuser" value="Mellon"/>&ndash;&gt;&lt;!&ndash; 4.0版本作者默认 用户名和密码 &ndash;&gt;
+                <entry key="lohas" value="lohas"/>
             </map>
         </property>
-    </bean>
+    </bean>-->
 
     <!-- Required for proxy ticket mechanism -->
     <bean id="proxyPrincipalResolver"
@@ -137,14 +139,14 @@
     Bean that defines the attributes that a service may return.  This example uses the Stub/Mock version.  A real implementation
     may go against a database or LDAP server.  The id should remain "attributeRepository" though.
     +-->
-    <bean id="attributeRepository" class="org.jasig.services.persondir.support.StubPersonAttributeDao"
+  <!--  <bean id="attributeRepository" class="org.jasig.services.persondir.support.StubPersonAttributeDao"
           p:backingMap-ref="attrRepoBackingMap" />
 
     <util:map id="attrRepoBackingMap">
         <entry key="uid" value="uid" />
         <entry key="eduPersonAffiliation" value="eduPersonAffiliation" />
         <entry key="groupMembership" value="groupMembership" />
-    </util:map>
+    </util:map>-->
 
     <!-- 
     Sample, in-memory data store for the ServiceRegistry. A real implementation
@@ -203,24 +205,42 @@
         TODO 使用定制化配置时，需禁用测试配置相关文件（带有 custom-tag 代码处为测试配置）
         以下内容为定制化配置（JDBC，密码MD5加密等）,如需简单测试，注释以下内容即可
     -->
-    <!--<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">-->
-        <!--<property name="driverClassName" value="com.mysql.jdbc.Driver" />-->
-        <!--<property name="url" value="jdbc:mysql://192.168.8.200:3306/udf_ecw_dev"/>-->
-        <!--<property name="username" value="dev"/>-->
-        <!--<property name="password" value="dev"/>-->
-    <!--</bean>-->
 
-    <!--&lt;!&ndash;    若用户名和密码在同一表中可直接使用此配置，若用户名和密码分别在不同表中，-->
-            <!--可自行实现org.jasig.cas.adaptors.jdbc.AbstractJdbcUsernamePasswordAuthenticationHandler 接口进行扩展-->
-        <!--&ndash;&gt;-->
-    <!--<bean id="primaryAuthenticationHandler"-->
-          <!--class="org.jasig.cas.adaptors.jdbc.QueryDatabaseAuthenticationHandler">-->
-        <!--<property name="dataSource" ref="dataSource" />-->
-        <!--<property name="sql" value="SELECT m.MEMBER_CODE as password FROM cr_member m WHERE m.EMAIL=?" />-->
-        <!--<property name="passwordEncoder" ref="passwordEncoder" />-->
-    <!--</bean>-->
-    <!--&lt;!&ndash;    默认支持MD5,SHA1，如需支持其他编码方式可自行实现org.jasig.cas.authentication.handler.PasswordEncoder接口进行扩展   &ndash;&gt;-->
-    <!--<bean id="passwordEncoder" class="org.jasig.cas.authentication.handler.DefaultPasswordEncoder" >-->
-        <!--<constructor-arg value="MD5" />-->
-    <!--</bean>-->
+
+    <!--修改登录返回信息-->
+    <bean id="attributeRepository" class="org.github.lohasle.cas.server.BlogStubPersonAttributeDao">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver" />
+        <property name="url" value="jdbc:mysql://127.0.0.1:3306/cas_center"/>
+        <property name="username" value="root"/>
+        <property name="password" value="lohas"/>
+    </bean>
+
+    <!-- 拓展实现的复合登录，支持username email phone 登录 -->
+    <bean id="primaryAuthenticationHandler"
+          class="org.github.lohasle.cas.server.QueryDatabaseAuthenticationHandler">
+        <property name="dataSource" ref="dataSource" />
+        <property name="sql" value="SELECT password  FROM cas_user WHERE username = ? or phone=? or email=?" />
+      <!--  <property name="passwordEncoder" ref="passwordEncoder" />-->  <!--密码-->
+    </bean>
+
+
+
+
+    <!--    若用户名和密码在同一表中可直接使用此配置，若用户名和密码分别在不同表中，
+            可自行实现org.jasig.cas.adaptors.jdbc.AbstractJdbcUsernamePasswordAuthenticationHandler 接口进行扩展
+        -->
+   <!-- <bean id="primaryAuthenticationHandler"
+          class="org.jasig.cas.adaptors.jdbc.QueryDatabaseAuthenticationHandler">
+        <property name="dataSource" ref="dataSource" />
+        <property name="sql" value="SELECT password as password FROM cas_user WHERE = ?" />
+        <property name="passwordEncoder" ref="passwordEncoder" />
+    </bean>
+    &lt;!&ndash;    默认支持MD5,SHA1，如需支持其他编码方式可自行实现org.jasig.cas.authentication.handler.PasswordEncoder接口进行扩展   &ndash;&gt;
+    <bean id="passwordEncoder" class="org.jasig.cas.authentication.handler.DefaultPasswordEncoder" >
+        <constructor-arg value="MD5" />
+    </bean>-->
 </beans>
