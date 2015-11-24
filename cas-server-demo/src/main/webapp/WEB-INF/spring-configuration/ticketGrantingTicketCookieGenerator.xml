@@ -28,11 +28,11 @@
 		You can change the name if you want to make it harder for people to guess.
 	</description>
 
-    <!--    cookieSecure设置为false关闭https协议    -->
+    <!--    cookieSecure设置为false关闭https协议 有效期-1   -->
 	<bean id="ticketGrantingTicketCookieGenerator" class="org.jasig.cas.web.support.CookieRetrievingCookieGenerator"
 		p:cookieSecure="false"
-		p:cookieMaxAge="3600"
+		p:cookieMaxAge="-1"
 		p:cookieName="CASTGC"
-          p:rememberMeMaxAge="3600"
+		  p:rememberMeMaxAge="3600"
           p:cookiePath="/cas" />
 </beans>
