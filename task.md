@@ -1,6 +1,7 @@
 ## 待完成功能点
 - ~~CAS Server~~
 - ~~CAS Client for Spring Security~~
+- ~~CAS Client for Servlet
 - CAS Client for Apache Shiro
 - ~~Remember Me~~
 - OpenID Login for QQ
